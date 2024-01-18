@@ -1,4 +1,5 @@
 import { Flight } from '../models/flight.js'
+import { Meal } from "../models/meal.js"
 
 
 function newFlight(req, res) {
@@ -42,17 +43,28 @@ function index(req,res){
 
 function show(req, res) {
   Flight.findById(req.params.flightId)
+  .populate('food')
   .then(flight => {
+    Meal.find({_id: {$nin: flight.meal}})
+    .then(meals => {
     res.render('flights/show', { 
       flight: flight,
       title: 'Flight Detail', 
+      meals:meals
     })    
   })
   .catch(err => {
     console.log(err)
     res.redirect("/")
   })
+}).catch(err => {
+  console.log(err)
+  res.redirect('/')
+})
 }
+
+
+
 function deleteFlight(req, res) {
   Flight.findByIdAndDelete(req.params.flightId)
   .then(flight => {
@@ -67,7 +79,6 @@ function deleteFlight(req, res) {
 function edit(req, res) {
   Flight.findById(req.params.flightId)
   .then(flight => {
-    console.log("flight on edit page",flight)
     res.render("flights/edit", {
       flight:flight, 
       title: "Edit Flight"
@@ -81,9 +92,7 @@ function edit(req, res) {
 
 
 function update(req, res) {
-  console.log("req body and update ",req.body)
-  // console.log("req req and update ",req)
-  console.log("req params and update ",req.params)
+
   for (let key in req.body) {
     if(req.body[key] === "") delete req.body[key]
   }
@@ -96,7 +105,44 @@ function update(req, res) {
     res.redirect("/flights")
   })
 }
+function createTicket(req, res) {
+  Flight.findById(req.params.flightId)
+  .then(flight => {
+    flight.tickets.push(req.body)
+    flight.save()
+    .then(() => {
+      res.redirect(`/flights/${req.params.flightId}`)
+    })
+    .catch(err => {
+      console.log(err)
+      res.redirect('/flights')
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    res.redirect('/flights')
+  })
+}
 
+
+function addToMeal(req, res) {
+  Flight.findById(req.params.flightId)
+  .then(flight => {
+    flight.food.push(req.body.mealId)
+    flight.save()
+    .then(() => {
+      res.redirect(`/flights/${flight._id}`)
+    })
+    .catch(err => {
+      console.log(err)
+      res.redirect('/flights')
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    res.redirect('/flights')
+  })
+}
 
 export {
   newFlight as new,
@@ -105,5 +151,7 @@ export {
   show,
   deleteFlight as delete,
   edit,
-  update
+  update,
+  createTicket,
+  addToMeal
 }

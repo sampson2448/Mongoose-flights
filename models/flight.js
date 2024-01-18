@@ -4,6 +4,13 @@ import mongoose from 'mongoose'
 const Schema = mongoose.Schema
 
 	
+const ticketSchema = new Schema({
+  seat: {type: String, match: /[A-F][1-9]\d?/},
+  price: {type: Number, min: 0}
+}, {
+  timestamps: true
+})
+
 const flightSchema = new Schema({
   airline:{
     type:String,
@@ -21,8 +28,17 @@ const flightSchema = new Schema({
 },
   depart: {
   type:Date,
-  default:'01/12/2025'
-}
+  default:function() {
+    return new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+
+  }
+}, 
+  // reviews is an array of review subdocs!
+  tickets: [ticketSchema],
+  food: [{type: Schema.Types.ObjectId, ref: 'Meal'}]
+
+}, {
+  timestamps: true
 })
 
 const Flight = mongoose.model('Flight', flightSchema)
